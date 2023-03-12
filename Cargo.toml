@@ -1,4 +1,5 @@
 [workspace]
 members = [
+    "channel-receiver",
     "channel-sender",
 ]
