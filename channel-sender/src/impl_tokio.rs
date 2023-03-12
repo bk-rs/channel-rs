@@ -1,7 +1,7 @@
 use tokio::sync::mpsc::error::TrySendError;
 pub use tokio::sync::mpsc::{Sender as TokioSender, UnboundedSender as TokioUnboundedSender};
 
-use crate::{SendError, Sender};
+use crate::{BoundedSender, SendError, SendErrorWithoutFull, Sender, UnboundedSender};
 
 //
 impl<T> Sender<T> for TokioSender<T> {

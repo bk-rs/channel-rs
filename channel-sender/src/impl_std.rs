@@ -1,7 +1,7 @@
 use std::sync::mpsc::TrySendError;
 pub use std::sync::mpsc::{Sender as StdSender, SyncSender as StdSyncSender};
 
-use crate::{SendError, Sender};
+use crate::{SendError, SendErrorWithoutFull, Sender, UnboundedSender};
 
 //
 impl<T> Sender<T> for StdSender<T> {

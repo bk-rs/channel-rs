@@ -16,7 +16,7 @@ readme = "README.md"
 all-features = true
 
 [features]
-default = []
+default = ["impl_tokio", "impl_async_channel"]
 
 impl_tokio = ["tokio"]
 impl_async_channel = ["async-channel"]
@@ -28,7 +28,7 @@ tokio = { version = "1", default-features = false, features = ["sync"], optional
 async-channel = { version = "1", default-features = false, optional = true }
 
 [dev-dependencies]
-tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "time"] }
 
 [package.metadata.cargo-all-features]
 skip_optional_dependencies = true
