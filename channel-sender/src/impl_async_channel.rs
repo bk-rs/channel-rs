@@ -28,6 +28,11 @@ impl<T> BoundedSender<T> for AsyncChannelSender<T> {
 
 impl<T> UnboundedSender<T> for AsyncChannelSender<T> {
     fn send(&self, t: T) -> Result<(), SendErrorWithoutFull<T>> {
+        debug_assert!(
+            !self.is_full(),
+            "Unbounded channels are never full. Make sure you are using `async_channel::unbounded`."
+        );
+
         match self.try_send(t) {
             Ok(_) => Ok(()),
             Err(err) => match err {
@@ -77,6 +82,7 @@ mod tests {
             assert_eq!(rx.recv().await, Ok(1));
             drop(rx);
             assert_eq!(sender.send(3).await, Err(SendErrorWithoutFull::Closed(3)));
+            assert_eq!(sender.try_send(3), Err(SendError::Closed(3)));
         }
     }
 

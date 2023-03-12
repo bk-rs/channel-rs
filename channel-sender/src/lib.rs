@@ -36,11 +36,11 @@ impl<T: core::fmt::Debug> std::error::Error for SendError<T> {}
 
 impl<T> SendError<T> {
     pub fn is_full(&self) -> bool {
-        matches!(self, SendError::Full(_))
+        matches!(self, Self::Full(_))
     }
 
     pub fn is_closed_or_disconnected(&self) -> bool {
-        matches!(self, SendError::Closed(_) | SendError::Disconnected(_))
+        matches!(self, Self::Closed(_) | Self::Disconnected(_))
     }
 
     pub fn inner(&self) -> &T {
@@ -73,6 +73,14 @@ impl<T: core::fmt::Debug> core::fmt::Display for SendErrorWithoutFull<T> {
 impl<T: core::fmt::Debug> std::error::Error for SendErrorWithoutFull<T> {}
 
 impl<T> SendErrorWithoutFull<T> {
+    pub fn is_closed_or_disconnected(&self) -> bool {
+        matches!(self, Self::Closed(_) | Self::Disconnected(_))
+    }
+
+    pub fn is_unreachable_full(&self) -> bool {
+        matches!(self, Self::UnreachableFull(_))
+    }
+
     pub fn inner(&self) -> &T {
         match &self {
             Self::Closed(v) => v,

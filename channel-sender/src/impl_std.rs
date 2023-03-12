@@ -64,12 +64,14 @@ mod tests {
 
     #[test]
     fn test_with_sync_channel() {
-        let (tx, rx) = std::sync::mpsc::sync_channel(1);
-        let sender: Box<dyn Sender<usize>> = Box::new(tx);
-        assert_eq!(sender.send(1), Ok(()));
-        assert_eq!(sender.send(2), Err(SendError::Full(2)));
-        assert_eq!(rx.recv(), Ok(1));
-        drop(rx);
-        assert_eq!(sender.send(3), Err(SendError::Disconnected(3)));
+        {
+            let (tx, rx) = std::sync::mpsc::sync_channel(1);
+            let sender: Box<dyn Sender<usize>> = Box::new(tx);
+            assert_eq!(sender.send(1), Ok(()));
+            assert_eq!(sender.send(2), Err(SendError::Full(2)));
+            assert_eq!(rx.recv(), Ok(1));
+            drop(rx);
+            assert_eq!(sender.send(3), Err(SendError::Disconnected(3)));
+        }
     }
 }
