@@ -1,0 +1,34 @@
+[package]
+name = "channel-sender"
+version = "0.1.0"
+authors = ["vkill <vkill.net@gmail.com>"]
+edition = "2021"
+description = "Channel Sender"
+license = "Apache-2.0 OR MIT"
+repository = "https://github.com/bk-rs/channel-rs"
+homepage = "https://github.com/bk-rs/channel-rs"
+documentation = "https://docs.rs/channel-sender"
+keywords = []
+categories = []
+readme = "README.md"
+
+[package.metadata.docs.rs]
+all-features = true
+
+[features]
+default = []
+
+impl_tokio = ["tokio"]
+impl_async_channel = ["async-channel"]
+
+[dependencies]
+async-trait = { version = "0.1", default-features = false }
+
+tokio = { version = "1", default-features = false, features = ["sync"], optional = true }
+async-channel = { version = "1", default-features = false, optional = true }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+
+[package.metadata.cargo-all-features]
+skip_optional_dependencies = true
