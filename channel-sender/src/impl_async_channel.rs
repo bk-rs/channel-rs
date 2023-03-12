@@ -6,7 +6,7 @@ use crate::{BoundedSender, SendError, SendErrorWithoutFull, Sender, UnboundedSen
 //
 impl<T> Sender<T> for AsyncChannelSender<T> {
     fn send(&self, t: T) -> Result<(), SendError<T>> {
-        self.try_send(t).map_err(Into::into)
+        AsyncChannelSender::try_send(self, t).map_err(Into::into)
     }
 }
 
@@ -16,13 +16,13 @@ impl<T> BoundedSender<T> for AsyncChannelSender<T> {
     where
         T: Send,
     {
-        self.send(t)
+        AsyncChannelSender::send(self, t)
             .await
             .map_err(|err| SendErrorWithoutFull::Closed(err.0))
     }
 
     fn try_send(&self, t: T) -> Result<(), SendError<T>> {
-        self.try_send(t).map_err(Into::into)
+        AsyncChannelSender::try_send(self, t).map_err(Into::into)
     }
 }
 
@@ -33,7 +33,7 @@ impl<T> UnboundedSender<T> for AsyncChannelSender<T> {
             "Unbounded channels are never full. Make sure you are using `async_channel::unbounded`."
         );
 
-        match self.try_send(t) {
+        match AsyncChannelSender::try_send(self, t) {
             Ok(_) => Ok(()),
             Err(err) => match err {
                 TrySendError::Full(v) => Err(SendErrorWithoutFull::UnreachableFull(v)),

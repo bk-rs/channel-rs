@@ -6,7 +6,7 @@ use crate::{BoundedSender, SendError, SendErrorWithoutFull, Sender, UnboundedSen
 //
 impl<T> Sender<T> for TokioSender<T> {
     fn send(&self, t: T) -> Result<(), SendError<T>> {
-        self.try_send(t).map_err(Into::into)
+        TokioSender::try_send(self, t).map_err(Into::into)
     }
 }
 

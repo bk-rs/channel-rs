@@ -13,7 +13,7 @@ impl<T> Sender<T> for StdSender<T> {
 
 impl<T> Sender<T> for StdSyncSender<T> {
     fn send(&self, t: T) -> Result<(), SendError<T>> {
-        self.try_send(t).map_err(Into::into)
+        StdSyncSender::try_send(self, t).map_err(Into::into)
     }
 }
 
