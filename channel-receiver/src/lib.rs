@@ -1,3 +1,5 @@
+use dyn_clone::{clone_trait_object, DynClone};
+
 //
 //
 //
@@ -11,6 +13,18 @@ pub trait AsyncReceiver<T> {
 
     fn close(&mut self);
 }
+
+#[async_trait::async_trait]
+pub trait CloneableAsyncReceiver<T>: DynClone {
+    async fn recv(&self) -> Option<T>
+    where
+        T: Send;
+
+    fn try_recv(&self) -> Result<T, TryRecvError>;
+
+    fn close(&self);
+}
+clone_trait_object!(<T> CloneableAsyncReceiver<T>);
 
 //
 //
