@@ -23,6 +23,7 @@ impl_async_channel = ["async-channel"]
 
 [dependencies]
 async-trait = { version = "0.1", default-features = false }
+dyn-clone = { version = "1", default-features = false }
 
 tokio = { version = "1", default-features = false, features = ["sync"], optional = true }
 async-channel = { version = "1", default-features = false, optional = true }

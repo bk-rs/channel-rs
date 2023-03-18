@@ -1,3 +1,5 @@
+use dyn_clone::{clone_trait_object, DynClone};
+
 //
 //
 //
@@ -17,6 +19,29 @@ pub trait BoundedSender<T> {
 pub trait UnboundedSender<T> {
     fn send(&self, t: T) -> Result<(), SendErrorWithoutFull<T>>;
 }
+
+//
+//
+//
+pub trait CloneableSender<T>: DynClone {
+    fn send(&self, t: T) -> Result<(), SendError<T>>;
+}
+clone_trait_object!(<T> CloneableSender<T>);
+
+#[async_trait::async_trait]
+pub trait CloneableBoundedSender<T>: DynClone {
+    async fn send(&self, t: T) -> Result<(), SendErrorWithoutFull<T>>
+    where
+        T: Send;
+
+    fn try_send(&self, t: T) -> Result<(), SendError<T>>;
+}
+clone_trait_object!(<T> CloneableBoundedSender<T>);
+
+pub trait CloneableUnboundedSender<T>: DynClone {
+    fn send(&self, t: T) -> Result<(), SendErrorWithoutFull<T>>;
+}
+clone_trait_object!(<T> CloneableUnboundedSender<T>);
 
 //
 //
