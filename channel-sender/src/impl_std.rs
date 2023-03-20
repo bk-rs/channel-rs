@@ -1,5 +1,5 @@
 use std::sync::mpsc::TrySendError;
-pub use std::sync::mpsc::{Sender as StdSender, SyncSender as StdSyncSender};
+pub use std::sync::mpsc::{Sender as StdMpscSender, SyncSender as StdMpscSyncSender};
 
 //
 mod multi_producer_impl {
@@ -7,9 +7,9 @@ mod multi_producer_impl {
 
     use crate::{error::SendErrorWithoutFull, multi_producer::UnboundedSender};
 
-    impl<T> UnboundedSender<T> for StdSender<T> {
+    impl<T> UnboundedSender<T> for StdMpscSender<T> {
         fn send(&self, t: T) -> Result<(), SendErrorWithoutFull<T>> {
-            StdSender::send(self, t).map_err(|err| SendErrorWithoutFull::Disconnected(err.0))
+            StdMpscSender::send(self, t).map_err(|err| SendErrorWithoutFull::Disconnected(err.0))
         }
     }
 }
@@ -23,30 +23,30 @@ mod generic_impl {
         generic::{CloneableSender, Sender},
     };
 
-    impl<T> Sender<T> for StdSender<T> {
+    impl<T> Sender<T> for StdMpscSender<T> {
         fn send(&self, t: T) -> Result<(), SendError<T>> {
             // https://doc.rust-lang.org/std/sync/mpsc/struct.SendError.html
-            StdSender::send(self, t).map_err(|err| SendError::Disconnected(err.0))
+            StdMpscSender::send(self, t).map_err(|err| SendError::Disconnected(err.0))
         }
     }
 
-    impl<T> Sender<T> for StdSyncSender<T> {
+    impl<T> Sender<T> for StdMpscSyncSender<T> {
         fn send(&self, t: T) -> Result<(), SendError<T>> {
-            StdSyncSender::try_send(self, t).map_err(Into::into)
+            StdMpscSyncSender::try_send(self, t).map_err(Into::into)
         }
     }
 
     //
-    impl<T> CloneableSender<T> for StdSender<T> {
+    impl<T> CloneableSender<T> for StdMpscSender<T> {
         fn send(&self, t: T) -> Result<(), SendError<T>> {
             // https://doc.rust-lang.org/std/sync/mpsc/struct.SendError.html
-            StdSender::send(self, t).map_err(|err| SendError::Disconnected(err.0))
+            StdMpscSender::send(self, t).map_err(|err| SendError::Disconnected(err.0))
         }
     }
 
-    impl<T> CloneableSender<T> for StdSyncSender<T> {
+    impl<T> CloneableSender<T> for StdMpscSyncSender<T> {
         fn send(&self, t: T) -> Result<(), SendError<T>> {
-            StdSyncSender::try_send(self, t).map_err(Into::into)
+            StdMpscSyncSender::try_send(self, t).map_err(Into::into)
         }
     }
 }

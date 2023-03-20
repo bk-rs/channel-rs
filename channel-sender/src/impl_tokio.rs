@@ -1,5 +1,8 @@
 use tokio::sync::mpsc::error::TrySendError;
-pub use tokio::sync::mpsc::{Sender as TokioSender, UnboundedSender as TokioUnboundedSender};
+pub use tokio::sync::{
+    mpsc::{Sender as TokioMpscSender, UnboundedSender as TokioMpscUnboundedSender},
+    oneshot::Sender as TokioOneshotSender,
+};
 
 //
 mod multi_producer_impl {
@@ -11,24 +14,38 @@ mod multi_producer_impl {
     };
 
     #[async_trait::async_trait]
-    impl<T> BoundedSender<T> for TokioSender<T> {
+    impl<T> BoundedSender<T> for TokioMpscSender<T> {
         async fn send(&self, t: T) -> Result<(), SendErrorWithoutFull<T>>
         where
             T: Send,
         {
-            TokioSender::send(self, t)
+            TokioMpscSender::send(self, t)
                 .await
                 .map_err(|err| SendErrorWithoutFull::Closed(err.0))
         }
 
         fn try_send(&self, t: T) -> Result<(), SendError<T>> {
-            TokioSender::try_send(self, t).map_err(Into::into)
+            TokioMpscSender::try_send(self, t).map_err(Into::into)
         }
     }
 
-    impl<T> UnboundedSender<T> for TokioUnboundedSender<T> {
+    impl<T> UnboundedSender<T> for TokioMpscUnboundedSender<T> {
         fn send(&self, t: T) -> Result<(), SendErrorWithoutFull<T>> {
-            TokioUnboundedSender::send(self, t).map_err(|err| SendErrorWithoutFull::Closed(err.0))
+            TokioMpscUnboundedSender::send(self, t)
+                .map_err(|err| SendErrorWithoutFull::Closed(err.0))
+        }
+    }
+}
+
+//
+mod one_shot_impl {
+    use super::*;
+
+    use crate::{error::SendErrorWithoutFull, one_shot::Sender};
+
+    impl<T> Sender<T> for TokioOneshotSender<T> {
+        fn send(self, t: T) -> Result<(), SendErrorWithoutFull<T>> {
+            TokioOneshotSender::send(self, t).map_err(|t| SendErrorWithoutFull::Closed(t))
         }
     }
 }
@@ -42,27 +59,27 @@ mod generic_impl {
         generic::{CloneableSender, Sender},
     };
 
-    impl<T> Sender<T> for TokioSender<T> {
+    impl<T> Sender<T> for TokioMpscSender<T> {
         fn send(&self, t: T) -> Result<(), SendError<T>> {
-            TokioSender::try_send(self, t).map_err(Into::into)
+            TokioMpscSender::try_send(self, t).map_err(Into::into)
         }
     }
 
-    impl<T> CloneableSender<T> for TokioSender<T> {
+    impl<T> CloneableSender<T> for TokioMpscSender<T> {
         fn send(&self, t: T) -> Result<(), SendError<T>> {
-            TokioSender::try_send(self, t).map_err(Into::into)
+            TokioMpscSender::try_send(self, t).map_err(Into::into)
         }
     }
 
-    impl<T> Sender<T> for TokioUnboundedSender<T> {
+    impl<T> Sender<T> for TokioMpscUnboundedSender<T> {
         fn send(&self, t: T) -> Result<(), SendError<T>> {
-            TokioUnboundedSender::send(self, t).map_err(|err| SendError::Closed(err.0))
+            TokioMpscUnboundedSender::send(self, t).map_err(|err| SendError::Closed(err.0))
         }
     }
 
-    impl<T> CloneableSender<T> for TokioUnboundedSender<T> {
+    impl<T> CloneableSender<T> for TokioMpscUnboundedSender<T> {
         fn send(&self, t: T) -> Result<(), SendError<T>> {
-            TokioUnboundedSender::send(self, t).map_err(|err| SendError::Closed(err.0))
+            TokioMpscUnboundedSender::send(self, t).map_err(|err| SendError::Closed(err.0))
         }
     }
 }
