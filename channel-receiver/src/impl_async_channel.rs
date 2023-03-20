@@ -1,58 +1,66 @@
 pub use async_channel::Receiver as AsyncChannelReceiver;
 use async_channel::TryRecvError as TryRecvErrorInner;
 
-use crate::{AsyncReceiver, CloneableAsyncReceiver, TryRecvError};
-
 //
-#[async_trait::async_trait]
-impl<T> AsyncReceiver<T> for AsyncChannelReceiver<T> {
-    async fn recv(&mut self) -> Option<T>
-    where
-        T: Send,
-    {
-        AsyncChannelReceiver::recv(self).await.ok()
+mod x_consumer_impl {
+    use super::*;
+
+    use crate::{
+        error::TryRecvError,
+        x_consumer::{AsyncReceiver, CloneableAsyncReceiver},
+    };
+
+    #[async_trait::async_trait]
+    impl<T> AsyncReceiver<T> for AsyncChannelReceiver<T> {
+        async fn recv(&mut self) -> Option<T>
+        where
+            T: Send,
+        {
+            AsyncChannelReceiver::recv(self).await.ok()
+        }
+
+        fn try_recv(&mut self) -> Result<T, TryRecvError> {
+            AsyncChannelReceiver::try_recv(self).map_err(Into::into)
+        }
     }
 
-    fn try_recv(&mut self) -> Result<T, TryRecvError> {
-        AsyncChannelReceiver::try_recv(self).map_err(Into::into)
-    }
+    #[async_trait::async_trait]
+    impl<T> CloneableAsyncReceiver<T> for AsyncChannelReceiver<T> {
+        async fn recv(&self) -> Option<T>
+        where
+            T: Send,
+        {
+            AsyncChannelReceiver::recv(self).await.ok()
+        }
 
-    fn close(&mut self) {
-        AsyncChannelReceiver::close(self);
+        fn try_recv(&self) -> Result<T, TryRecvError> {
+            AsyncChannelReceiver::try_recv(self).map_err(Into::into)
+        }
     }
 }
 
-#[async_trait::async_trait]
-impl<T> CloneableAsyncReceiver<T> for AsyncChannelReceiver<T> {
-    async fn recv(&self) -> Option<T>
-    where
-        T: Send,
-    {
-        AsyncChannelReceiver::recv(self).await.ok()
-    }
-
-    fn try_recv(&self) -> Result<T, TryRecvError> {
-        AsyncChannelReceiver::try_recv(self).map_err(Into::into)
-    }
-
-    fn close(&self) {
-        AsyncChannelReceiver::close(self);
-    }
-}
-
 //
-impl From<TryRecvErrorInner> for TryRecvError {
-    fn from(err: TryRecvErrorInner) -> Self {
-        match err {
-            TryRecvErrorInner::Empty => Self::Empty,
-            TryRecvErrorInner::Closed => Self::Closed,
+mod error_convert {
+    use super::*;
+
+    use crate::error::TryRecvError;
+
+    impl From<TryRecvErrorInner> for TryRecvError {
+        fn from(err: TryRecvErrorInner) -> Self {
+            match err {
+                TryRecvErrorInner::Empty => Self::Empty,
+                TryRecvErrorInner::Closed => Self::Closed,
+            }
         }
     }
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
+mod x_consumer_impl_tests {
+    use crate::{
+        error::TryRecvError,
+        x_consumer::{AsyncReceiver, CloneableAsyncReceiver},
+    };
 
     #[tokio::test]
     async fn test_with_bounded() {

@@ -1,60 +1,99 @@
-use tokio::sync::mpsc::error::TryRecvError as TryRecvErrorInner;
-pub use tokio::sync::mpsc::{
-    Receiver as TokioReceiver, UnboundedReceiver as TokioUnboundedReceiver,
+use tokio::sync::{
+    mpsc::error::TryRecvError as MpscTryRecvErrorInner,
+    oneshot::error::TryRecvError as OneshotTryRecvError,
+};
+pub use tokio::sync::{
+    mpsc::{Receiver as TokioMpscReceiver, UnboundedReceiver as TokioMpscUnboundedReceiver},
+    oneshot::Receiver as TokioOneshotReceiver,
 };
 
-use crate::{AsyncReceiver, TryRecvError};
-
 //
-#[async_trait::async_trait]
-impl<T> AsyncReceiver<T> for TokioReceiver<T> {
-    async fn recv(&mut self) -> Option<T>
-    where
-        T: Send,
-    {
-        TokioReceiver::recv(self).await
+mod x_consumer_impl {
+    use super::*;
+
+    use crate::{error::TryRecvError, x_consumer::AsyncReceiver};
+
+    #[async_trait::async_trait]
+    impl<T> AsyncReceiver<T> for TokioMpscReceiver<T> {
+        async fn recv(&mut self) -> Option<T>
+        where
+            T: Send,
+        {
+            TokioMpscReceiver::recv(self).await
+        }
+
+        fn try_recv(&mut self) -> Result<T, TryRecvError> {
+            TokioMpscReceiver::try_recv(self).map_err(Into::into)
+        }
     }
 
-    fn try_recv(&mut self) -> Result<T, TryRecvError> {
-        TokioReceiver::try_recv(self).map_err(Into::into)
-    }
+    #[async_trait::async_trait]
+    impl<T> AsyncReceiver<T> for TokioMpscUnboundedReceiver<T> {
+        async fn recv(&mut self) -> Option<T>
+        where
+            T: Send,
+        {
+            TokioMpscUnboundedReceiver::recv(self).await
+        }
 
-    fn close(&mut self) {
-        TokioReceiver::close(self);
-    }
-}
-
-#[async_trait::async_trait]
-impl<T> AsyncReceiver<T> for TokioUnboundedReceiver<T> {
-    async fn recv(&mut self) -> Option<T>
-    where
-        T: Send,
-    {
-        TokioUnboundedReceiver::recv(self).await
-    }
-
-    fn try_recv(&mut self) -> Result<T, TryRecvError> {
-        TokioUnboundedReceiver::try_recv(self).map_err(Into::into)
-    }
-
-    fn close(&mut self) {
-        TokioUnboundedReceiver::close(self);
+        fn try_recv(&mut self) -> Result<T, TryRecvError> {
+            TokioMpscUnboundedReceiver::try_recv(self).map_err(Into::into)
+        }
     }
 }
 
 //
-impl From<TryRecvErrorInner> for TryRecvError {
-    fn from(err: TryRecvErrorInner) -> Self {
-        match err {
-            TryRecvErrorInner::Empty => Self::Empty,
-            TryRecvErrorInner::Disconnected => Self::Disconnected,
+mod one_shot_impl {
+    use super::*;
+
+    use crate::{
+        error::{OneshotRecvError, TryRecvError},
+        one_shot::AsyncReceiver,
+    };
+
+    #[async_trait::async_trait]
+    impl<T> AsyncReceiver<T> for TokioOneshotReceiver<T> {
+        async fn recv(self) -> Result<T, OneshotRecvError>
+        where
+            T: Send,
+        {
+            self.await.map_err(|_| OneshotRecvError::Dropped)
+        }
+
+        fn try_recv(&mut self) -> Result<T, TryRecvError> {
+            TokioOneshotReceiver::try_recv(self).map_err(Into::into)
+        }
+    }
+}
+
+//
+mod error_convert {
+    use super::*;
+
+    use crate::error::TryRecvError;
+
+    impl From<MpscTryRecvErrorInner> for TryRecvError {
+        fn from(err: MpscTryRecvErrorInner) -> Self {
+            match err {
+                MpscTryRecvErrorInner::Empty => Self::Empty,
+                MpscTryRecvErrorInner::Disconnected => Self::Disconnected,
+            }
+        }
+    }
+
+    impl From<OneshotTryRecvError> for TryRecvError {
+        fn from(err: OneshotTryRecvError) -> Self {
+            match err {
+                OneshotTryRecvError::Empty => Self::Empty,
+                OneshotTryRecvError::Closed => Self::Closed,
+            }
         }
     }
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
+mod x_consumer_impl_tests {
+    use crate::{error::TryRecvError, x_consumer::AsyncReceiver};
 
     #[tokio::test]
     async fn test_with_channel() {
