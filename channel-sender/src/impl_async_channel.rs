@@ -29,9 +29,9 @@ mod multi_producer_impl {
     impl<T> UnboundedSender<T> for AsyncChannelSender<T> {
         fn send(&self, t: T) -> Result<(), SendErrorWithoutFull<T>> {
             debug_assert!(
-            !self.is_full(),
-            "Unbounded channels are never full. Make sure you are using `async_channel::unbounded`."
-        );
+                !self.is_full(),
+                "Unbounded channels are never full. Make sure you are using `async_channel::unbounded`."
+            );
 
             match AsyncChannelSender::try_send(self, t) {
                 Ok(_) => Ok(()),

@@ -133,6 +133,7 @@ mod generic_impl_tests {
         {
             let (tx, rx) = std::sync::mpsc::sync_channel(1);
             let sender: Box<dyn CloneableSender<usize>> = Box::new(tx);
+            let sender = sender.clone();
             assert_eq!(sender.send(1), Ok(()));
             assert_eq!(sender.send(2), Err(SendError::Full(2)));
             assert_eq!(rx.recv(), Ok(1));
