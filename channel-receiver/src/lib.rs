@@ -1,9 +1,14 @@
 //
-pub mod x_consumer;
-pub use x_consumer as mp;
+pub mod multi_consumer;
+pub use multi_consumer as mp;
+
+pub mod single_consumer;
+pub use single_consumer as sp;
 
 pub mod one_shot;
 pub use one_shot as oneshot;
+
+pub mod generic;
 
 pub mod error;
 pub use error::TryRecvError;

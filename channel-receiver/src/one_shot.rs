@@ -1,11 +1,9 @@
+use core::future::Future;
+
 use crate::error::{OneshotRecvError, TryRecvError};
 
 //
 #[async_trait::async_trait]
-pub trait AsyncReceiver<T> {
-    async fn recv(self) -> Result<T, OneshotRecvError>
-    where
-        T: Send;
-
+pub trait AsyncReceiver<T>: Future<Output = Result<T, OneshotRecvError>> {
     fn try_recv(&mut self) -> Result<T, TryRecvError>;
 }
