@@ -41,11 +41,20 @@ mod multi_producer_impl {
 mod one_shot_impl {
     use super::*;
 
-    use crate::{error::SendErrorWithoutFull, one_shot::Sender};
+    use crate::{
+        error::SendErrorWithoutFull,
+        one_shot::{BoxSender, Sender},
+    };
 
     impl<T> Sender<T> for TokioOneshotSender<T> {
         fn send(self, t: T) -> Result<(), SendErrorWithoutFull<T>> {
             TokioOneshotSender::send(self, t).map_err(|t| SendErrorWithoutFull::Closed(t))
+        }
+    }
+
+    impl<T> BoxSender<T> for TokioOneshotSender<T> {
+        fn send(self: Box<Self>, t: T) -> Result<(), SendErrorWithoutFull<T>> {
+            TokioOneshotSender::send(*self, t).map_err(|t| SendErrorWithoutFull::Closed(t))
         }
     }
 }
@@ -145,7 +154,7 @@ mod multi_producer_impl_tests {
 
 #[cfg(test)]
 mod one_shot_impl_tests {
-    use crate::one_shot::Sender;
+    use crate::one_shot::{BoxSender, Sender};
 
     #[tokio::test]
     async fn test_with_channel() {
@@ -159,6 +168,11 @@ mod one_shot_impl_tests {
 
             let (tx, rx) = tokio::sync::oneshot::channel();
             send(tx, 1);
+            assert_eq!(rx.await, Ok(1));
+
+            let (tx, rx) = tokio::sync::oneshot::channel();
+            let sender: Box<dyn BoxSender<usize>> = Box::new(tx);
+            assert_eq!(sender.send(1), Ok(()));
             assert_eq!(rx.await, Ok(1));
         }
     }
