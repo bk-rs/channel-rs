@@ -104,7 +104,6 @@ mod one_shot_impl {
         }
     }
 
-    #[async_trait::async_trait]
     impl<T> AsyncReceiver<T> for TokioOneshotReceiverWrapper<T> {
         fn try_recv(&mut self) -> Result<T, TryRecvError> {
             TokioOneshotReceiver::try_recv(&mut self.0).map_err(Into::into)

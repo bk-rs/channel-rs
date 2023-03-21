@@ -144,6 +144,27 @@ mod multi_producer_impl_tests {
 }
 
 #[cfg(test)]
+mod one_shot_impl_tests {
+    use crate::one_shot::Sender;
+
+    #[tokio::test]
+    async fn test_with_channel() {
+        {
+            fn send<T>(sender: T, msg: usize)
+            where
+                T: Sender<usize>,
+            {
+                assert_eq!(sender.send(msg), Ok(()));
+            }
+
+            let (tx, rx) = tokio::sync::oneshot::channel();
+            send(tx, 1);
+            assert_eq!(rx.await, Ok(1));
+        }
+    }
+}
+
+#[cfg(test)]
 mod generic_impl_tests {
     use crate::{
         error::SendError,
